@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dành riêng cho chị</title>
+<style>
+  :root {
+    --ink: #4a1622;        /* chữ chính trên nền sáng: ~11:1 */
+    --ink-soft: #6e2d3b;   /* chữ phụ: ~8:1 */
+    --rose: #b8154f;       /* nút, nhấn: chữ trắng trên nút ~6.9:1 */
+    --paper: #fffafb;
+    --line: rgba(74, 22, 34, 0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    font-family: "Times New Roman", Times, serif;
+    color: var(--ink);
+    background: linear-gradient(170deg, #fff4f6 0%, #ffe0e7 50%, #ffc7d3 100%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  canvas#bg {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+  }
+  main { position: relative; z-index: 1; }
+  section {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 64px 20px;
+    text-align: center;
+  }
+  h1, h2 {
+    margin: 0 0 18px;
+    font-family: "Times New Roman", Times, serif;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  h1 { font-size: clamp(2.1rem, 6vw, 3.6rem); }
+  h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
+  p { font-size: clamp(1.02rem, 2.4vw, 1.18rem); line-height: 1.75; max-width: 620px; margin: 0 0 14px; color: var(--ink); }
+  .subtle { color: var(--ink-soft); font-size: 0.98rem; }
+  .divider {
+    width: 60px; height: 2px; background: var(--rose);
+    margin: 18px auto; border-radius: 2px; opacity: 0.6;
+  }
+
+  /* Mở đầu */
+  .heart-big {
+    font-size: clamp(84px, 18vw, 140px);
+    color: var(--rose);
+    cursor: pointer;
+    animation: beat 1.3s infinite;
+    filter: drop-shadow(0 8px 18px rgba(184, 21, 79, 0.35));
+    user-select: none;
+    line-height: 1;
+  }
+  @keyframes beat {
+    0%, 100% { transform: scale(1); }
+    15% { transform: scale(1.2); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.12); }
+  }
+  .hint { color: var(--ink-soft); font-size: 0.95rem; margin-top: 22px; }
+
+  /* Nút */
+  .btn {
+    margin-top: 22px;
+    padding: 13px 30px;
+    border: none; border-radius: 40px;
+    background: var(--rose); color: #fff;
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(74, 22, 34, 0.25);
+    transition: transform 0.2s, background 0.2s;
+  }
+  .btn:hover { background: #9a1142; transform: translateY(-2px); }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible, .heart-big:focus-visible, .card:focus-visible {
+    outline: 3px solid #ffb3c6; outline-offset: 3px;
+  }
+
+  /* Lá thư */
+  .letter {
+    background: var(--paper);
+    border-radius: 24px;
+    padding: 36px 32px;
+    width: min(640px, 92vw);
+    text-align: left;
+    border: 1px solid var(--line);
+    box-shadow: 0 18px 44px rgba(74, 22, 34, 0.15);
+    min-height: 280px;
+  }
+  .letter pre {
+    font-family: "Times New Roman", Times, serif;
+    white-space: pre-wrap;
+    font-size: clamp(1.02rem, 2.4vw, 1.15rem);
+    line-height: 1.85;
+    margin: 0;
+    color: var(--ink);
+  }
+  .caret {
+    display: inline-block; width: 2px; height: 1.05em;
+    background: var(--ink); vertical-align: text-bottom;
+    animation: blink 0.8s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Ba lời hứa (thẻ lật) */
+  .promises {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    width: min(880px, 94vw);
+    margin-top: 10px;
+  }
+  .card {
+    perspective: 1000px;
+    height: 230px;
+    cursor: pointer;
+    border-radius: 22px;
+    outline: none;
+  }
+  .card-inner {
+    position: relative;
+    width: 100%; height: 100%;
+    transition: transform 0.7s;
+    transform-style: preserve-3d;
+  }
+  .card.flipped .card-inner { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+    border-radius: 22px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border: 1px solid var(--line);
+    box-shadow: 0 12px 30px rgba(74, 22, 34, 0.14);
+  }
+  .front { background: #fff; color: var(--ink); }
+  .front .num {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 2.4rem;
+    color: var(--rose);
+    line-height: 1;
+  }
+  .front .label { margin-top: 10px; font-weight: 700; font-size: 1.05rem; }
+  .front .tap { margin-top: 8px; font-size: 0.85rem; color: var(--ink-soft); }
+  .back {
+    background: var(--paper);
+    transform: rotateY(180deg);
+  }
+  .back p {
+    margin: 0; font-size: 1rem; line-height: 1.6;
+    color: var(--ink);
+  }
+
+  /* Lời kết */
+  .finale .big {
+    font-size: clamp(3.2rem, 10vw, 6rem);
+    color: var(--rose);
+    animation: beat 1.3s infinite;
+    display: inline-block;
+    line-height: 1;
+  }
+  .finale p { font-size: clamp(1.1rem, 2.8vw, 1.4rem); }
+  .confetti-piece {
+    position: fixed; top: -30px; z-index: 5; pointer-events: none;
+    font-size: 22px; color: var(--rose);
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0.2; }
+  }
+
+  /* Nút nhạc */
+  .music-btn {
+    position: fixed; right: 16px; bottom: 16px; z-index: 10;
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 1px solid var(--line); background: #fff; color: var(--rose);
+    font-size: 1.3rem; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(74, 22, 34, 0.25);
+  }
+  .music-btn:focus-visible { outline: 3px solid #ffb3c6; outline-offset: 3px; }
+
+  @media (max-width: 720px) {
+    .promises { grid-template-columns: 1fr; }
+    .card { height: 190px; }
+    .letter { padding: 26px 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<button class="music-btn" id="musicBtn" title="Bật/tắt nhạc nền" aria-label="Bật tắt nhạc nền">♪</button>
+
+<main>
+
+  <!-- 1. Mở đầu -->
+  <section id="intro">
+    <div class="heart-big" id="heartBig" role="button" tabindex="0" aria-label="Cuộn xuống">♥</div>
+    <h1 style="margin-top:26px">Dành riêng cho chị</h1>
+    <div class="divider"></div>
+    <p>Có những điều em chưa bao giờ kịp nói.<br>Hôm nay, em muốn kể cho chị nghe từ đầu.</p>
+    <p class="hint">Chạm vào trái tim để bắt đầu nhé</p>
+  </section>
+
+  <!-- 2. Lá thư -->
+  <section id="letter">
+    <h2>Một lá thư nhỏ</h2>
+    <div class="letter">
+      <pre id="letterText" aria-live="polite"></pre><span class="caret" id="caret"></span>
+    </div>
+    <button class="btn" id="skipLetter">Hiện nhanh</button>
+  </section>
+
+  <!-- 3. Ba lời hứa -->
+  <section id="promises">
+    <h2>Ba điều em hứa với chị</h2>
+    <p class="subtle">Chạm vào từng thẻ để xem nhé.</p>
+    <div class="promises">
+      <div class="card" tabindex="0" role="button" aria-pressed="false">
+        <div class="card-inner">
+          <div class="face front"><div class="num">1</div><div class="label">Lắng nghe chị</div><div class="tap">Chạm để lật</div></div>
+          <div class="face back"><p>Dù bận đến đâu, em sẽ luôn dành thời gian để nghe chị kể về ngày hôm nay.</p></div>
+        </div>
+      </div>
+      <div class="card" tabindex="0" role="button" aria-pressed="false">
+        <div class="card-inner">
+          <div class="face front"><div class="num">2</div><div class="label">Ở bên chị</div><div class="tap">Chạm để lật</div></div>
+          <div class="face back"><p>Khi chị vui, em muốn cùng chị vui. Khi chị mệt, em muốn là chỗ để chị dựa vào.</p></div>
+        </div>
+      </div>
+      <div class="card" tabindex="0" role="button" aria-pressed="false">
+        <div class="card-inner">
+          <div class="face front"><div class="num">3</div><div class="label">Đi cùng chị</div><div class="tap">Chạm để lật</div></div>
+          <div class="face back"><p>Dù mai này có ra sao, em vẫn muốn cùng chị đi tiếp, từng bước một, thật lâu.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Lời kết -->
+  <section id="finale" class="finale">
+    <div class="big">♥</div>
+    <h2 style="margin-top:18px">Em yêu chị</h2>
+    <p>Cảm ơn chị vì đã ở đây, vì đã cùng em đi qua những ngày bình thường và cả những ngày đặc biệt.</p>
+    <p>Mong rằng sau này chúng mình vẫn sẽ cùng nhau viết thêm thật nhiều kỷ niệm như thế.</p>
+    <button class="btn" id="confettiBtn">Thả trái tim cho chị</button>
+  </section>
+
+</main>
+
+<script>
+/* ============ Nền hạt tim bay ============ */
+(function () {
+  const canvas = document.getElementById("bg");
+  const ctx = canvas.getContext("2d");
+  let w, h, hearts = [];
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function makeHeart(initial) {
+    return {
+      x: Math.random() * w,
+      y: initial ? Math.random() * h : h + 20,
+      size: 8 + Math.random() * 14,
+      speed: 0.35 + Math.random() * 0.8,
+      drift: (Math.random() - 0.5) * 0.6,
+      alpha: 0.25 + Math.random() * 0.3,
+      phase: Math.random() * Math.PI * 2
+    };
+  }
+  for (let i = 0; i < 36; i++) hearts.push(makeHeart(true));
+
+  function drawHeart(x, y, s) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + s / 4);
+    ctx.bezierCurveTo(x, y, x - s / 2, y, x - s / 2, y + s / 4);
+    ctx.bezierCurveTo(x - s / 2, y + s / 2, x, y + s * 0.75, x, y + s);
+    ctx.bezierCurveTo(x, y + s * 0.75, x + s / 2, y + s / 2, x + s / 2, y + s / 4);
+    ctx.bezierCurveTo(x + s / 2, y, x, y, x, y + s / 4);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function frame(t) {
+    ctx.clearRect(0, 0, w, h);
+    for (const p of hearts) {
+      p.y -= p.speed;
+      p.x += Math.sin(t / 900 + p.phase) * p.drift;
+      if (p.y < -30) Object.assign(p, makeHeart(false));
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = "#ffffff";
+      drawHeart(p.x, p.y, p.size);
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(frame);
+  }
+  if (!reduce) requestAnimationFrame(frame);
+})();
+
+/* ============ Chạm trái tim để cuộn xuống ============ */
+(function () {
+  const heart = document.getElementById("heartBig");
+  const go = () => document.getElementById("letter").scrollIntoView({ behavior: "smooth" });
+  heart.addEventListener("click", go);
+  heart.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") go(); });
+})();
+
+/* ============ Lá thư gõ từng chữ ============ */
+(function () {
+  const text =
+`Chị yêu,
+
+Em không biết bắt đầu lá thư này thế nào cho đúng. Em đã nghĩ rất lâu, viết rồi xóa rồi lại viết, nhưng cuối cùng em nghĩ chỉ cần nói thật lòng là được.
+
+Mình quen nhau chưa lâu, nhưng em vẫn nhớ rõ những ngày đầu trò chuyện. Chị có một sự hiền lành rất dễ mến, và em thích cách chị nói chuyện: nhẹ nhàng, dễ thương, không bao giờ làm người khác thấy khó xử. Chỉ sau một thời gian ngắn, em đã thấy mình mong được trò chuyện với chị mỗi ngày.
+
+Điều làm em để ý nhất ở chị là sự quan tâm lặng lẽ. Dù mới quen, chị đã hỏi em đã ăn chưa, nghỉ ngơi đủ chưa, và nhớ cả những chuyện em kể qua loa. Những điều tưởng nhỏ ấy khiến em thấy mình được trân trọng, và em rất trân quý điều đó.
+
+Cách chị nói chuyện lúc nào cũng dễ thương và hiền lành, như một buổi chiều mát trời. Có những hôm em mệt mỏi, chỉ cần vài câu trò chuyện với chị là lòng em nhẹ đi nhiều. Dù thời gian quen nhau chưa dài, em đã thấy điều đó rất rõ.
+
+Em không muốn nói quá nhiều về quá khứ, vì điều em quan tâm nhất là hiện tại và tương lai. Em muốn hiểu chị hơn mỗi ngày, muốn biết những điều chị thích, những điều chị lo, và cả những điều khiến chị vui. Em muốn là người mà chị có thể tin tưởng khi cần kể điều gì đó, dù lớn hay nhỏ.
+
+Em hiểu rằng không phải lúc nào cuộc sống cũng dễ dàng. Có thể chị đang có những áp lực mà em chưa biết hết. Nếu có lúc chị mệt, chị cứ nói với em. Em không cần chị lúc nào cũng mạnh mẽ, em chỉ mong chị được nhẹ lòng khi ở bên em.
+
+Điều em mong nhất là được đồng hành cùng chị thật lâu. Không chỉ những ngày vui, mà cả những ngày bình thường, những lúc chúng mình chỉ ngồi nói chuyện không đâu, hay những lúc cần nhau mà không biết nói gì. Em muốn cùng chị xây dựng những điều nhỏ bé nhưng bền lâu, để sau này nhìn lại, cả hai đều thấy mình đã đi cùng nhau một quãng đường đẹp.
+
+Em không hứa điều gì quá to tát. Em chỉ hứa sẽ đối xử với chị bằng sự chân thành, sẽ lắng nghe chị, sẽ tôn trọng những điều chị muốn, và sẽ không để chị phải lo lắng về tình cảm của em. Em hứa sẽ cố gắng để chị luôn thấy an tâm mỗi khi ở bên em.
+
+Cảm ơn chị vì đã trò chuyện với em, vì đã cho em cơ hội được hiểu chị, và vì đã mở lòng với em. Mỗi lần nhận được tin nhắn của chị, em đều thấy một ngày trở nên dễ chịu hơn.
+
+Em yêu chị nhiều.
+
+Nguyễn Tiến Cường`;
+
+  const el = document.getElementById("letterText");
+  const caret = document.getElementById("caret");
+  let idx = 0, started = false, timer = null;
+
+  function type() {
+    if (idx <= text.length) {
+      el.textContent = text.slice(0, idx++);
+      timer = setTimeout(type, 18);
+    } else {
+      caret.style.display = "none";
+    }
+  }
+  function finish() {
+    clearTimeout(timer);
+    el.textContent = text;
+    caret.style.display = "none";
+    idx = text.length + 1;
+  }
+
+  const obs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && !started) {
+      started = true;
+      type();
+    }
+  }, { threshold: 0.4 });
+  obs.observe(document.getElementById("letter"));
+
+  document.getElementById("skipLetter").addEventListener("click", finish);
+})();
+
+/* ============ Thẻ lật lời hứa ============ */
+(function () {
+  document.querySelectorAll(".card").forEach(card => {
+    const toggle = () => {
+      const flipped = card.classList.toggle("flipped");
+      card.setAttribute("aria-pressed", String(flipped));
+    };
+    card.addEventListener("click", toggle);
+    card.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    });
+  });
+})();
+
+/* ============ Mưa trái tim ============ */
+function dropHearts(count) {
+  const symbols = ["♥", "❤", "♡"];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement("div");
+    el.className = "confetti-piece";
+    el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    el.style.left = Math.random() * 100 + "vw";
+    el.style.animationDuration = (2 + Math.random() * 2.5) + "s";
+    el.style.animationDelay = Math.random() * 0.8 + "s";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+  }
+}
+document.getElementById("confettiBtn").addEventListener("click", () => dropHearts(50));
+
+/* ============ Nhạc nền tổng hợp ============ */
+(function () {
+  const btn = document.getElementById("musicBtn");
+  let ctx = null, playing = false, timer = null, step = 0;
+  const notes = [523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 523.25, 392.00];
+
+  function playNote(freq) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.9);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 1);
+  }
+
+  btn.addEventListener("click", () => {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!playing) {
+      playing = true;
+      btn.textContent = "♫";
+      timer = setInterval(() => playNote(notes[step++ % notes.length]), 600);
+    } else {
+      playing = false;
+      btn.textContent = "♪";
+      clearInterval(timer);
+    }
+  });
+})();
+</script>
+</body>
+</html>
